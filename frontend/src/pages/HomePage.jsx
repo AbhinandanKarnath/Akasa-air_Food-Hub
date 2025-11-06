@@ -26,7 +26,24 @@ const HomePage = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { getCartItemCount } = useCart();
     const navigate = useNavigate();
-    const user = getUser();
+    const [user, setUser] = useState(getUser());
+
+    useEffect(() => {
+        // Update user state periodically and on storage change
+        const updateUser = () => {
+            setUser(getUser());
+        };
+
+        // Listen for storage changes (when user logs in/out in another tab)
+        window.addEventListener('storage', updateUser);
+        
+        // Update user on mount
+        updateUser();
+
+        return () => {
+            window.removeEventListener('storage', updateUser);
+        };
+    }, []);
 
     useEffect(() => {
         const loadItems = async () => {
@@ -71,9 +88,13 @@ const HomePage = () => {
     // Handle search input change
     const handleSearchChange = (value) => {
         setSearchTerm(value);
-        // If searching, show all categories
+        // If searching, show all categories and scroll to menu
         if (value.trim()) {
             setSelectedCategory('All');
+            // Scroll to menu section
+            setTimeout(() => {
+                document.getElementById('menu')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
         }
     };
 
@@ -104,7 +125,7 @@ const HomePage = () => {
                             </span>
                         </div>
 
-                        {/* Desktop Navigation */}
+                        {/* Desktop Navigation
                         <nav className="hidden md:flex items-center space-x-8">
                             <button className="text-gray-700 hover:text-orange-600 transition-colors font-medium">Home</button>
                             <button 
@@ -115,7 +136,7 @@ const HomePage = () => {
                             </button>
                             <button className="text-gray-700 hover:text-orange-600 transition-colors font-medium">About</button>
                             <button className="text-gray-700 hover:text-orange-600 transition-colors font-medium">Contact</button>
-                        </nav>
+                        </nav> */}
 
                         {/* Right Side Actions */}
                         <div className="flex items-center space-x-4">
@@ -158,8 +179,8 @@ const HomePage = () => {
                                 className="flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-full transition-all duration-200 shadow-md hover:shadow-lg font-medium"
                             >
                                 <User className="h-4 w-4" />
-                                <span className="hidden sm:inline font-semibold">
-                                    {user ? user.name?.split(' ')[0] : 'Login'}
+                                <span className="font-semibold">
+                                    {isAuthenticated() && user ? user.name?.split(' ')[0] : 'Login'}
                                 </span>
                             </button>
 

@@ -9,6 +9,9 @@ import ProfilePage from './pages/ProfilePage';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import OrderHistory from './components/Orders/OrderHistory';
+// import CheckoutPage from './pages/CheckoutPage';
+import OrderHistoryPage from './pages/OrderHistoryPage';
+
 
 const App = () => {
   useEffect(() => {
@@ -27,6 +30,8 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/orders" element={<OrderHistory />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+<Route path="/orders" element={<OrderHistoryPage />} />
         </Routes>
       </Router>
     </CartProvider>

@@ -57,7 +57,8 @@ router.post('/create', auth, async (req, res) => {
   try {
     const { items, totalAmount, deliveryAddress } = req.body;
 
-    console.log('Creating order with data:', { items, totalAmount, deliveryAddress });
+    console.log('Creating order for user:', req.user.id);
+    console.log('Order data:', { items, totalAmount, deliveryAddress });
 
     // Validate stock again before creating order
     const outOfStock = [];
@@ -101,7 +102,7 @@ router.post('/create', auth, async (req, res) => {
       items: orderItems,
       totalAmount,
       deliveryAddress,
-      estimatedDelivery: new Date(Date.now() + 45 * 60000) // 45 minutes from now
+      estimatedDelivery: new Date(Date.now() + 45 * 60000) // 45 minutes
     });
 
     await order.save();
@@ -134,9 +135,13 @@ router.post('/create', auth, async (req, res) => {
 // Get user orders
 router.get('/my-orders', auth, async (req, res) => {
   try {
+    console.log('Fetching orders for user:', req.user.id);
+    
     const orders = await Order.find({ user: req.user.id })
       .populate('items.item')
       .sort({ createdAt: -1 });
+
+    console.log(`Found ${orders.length} orders`);
 
     res.json({
       success: true,
@@ -176,6 +181,47 @@ router.get('/:orderId', auth, async (req, res) => {
     res.status(500).json({ 
       success: false,
       message: 'Failed to fetch order', 
+      error: error.message 
+    });
+  }
+});
+
+// Update order status
+router.patch('/:orderId/status', auth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'];
+    
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid status' 
+      });
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      req.params.orderId,
+      { status, updatedAt: new Date() },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Order not found' 
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Order status updated',
+      order
+    });
+  } catch (error) {
+    console.error('Status update error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Status update failed', 
       error: error.message 
     });
   }

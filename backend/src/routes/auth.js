@@ -11,6 +11,11 @@ router.post('/register', async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
+        // Validation
+        if (!name || !email || !password) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+
         // Check if user exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -30,9 +35,9 @@ router.post('/register', async (req, res) => {
 
         await user.save();
 
-        // Generate JWT token
+        // Generate JWT token (use consistent key: id vs userId)
         const token = jwt.sign(
-            { userId: user._id, email: user.email },
+            { id: user._id, email: user.email }, // Changed userId to id for consistency
             JWT_SECRET,
             { expiresIn: '24h' }
         );
@@ -64,6 +69,11 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        // Validation
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email and password are required' });
+        }
+
         // Find user
         const user = await User.findOne({ email });
         if (!user) {
@@ -76,9 +86,9 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        // Generate JWT token
+        // Generate JWT token (use consistent key: id vs userId)
         const token = jwt.sign(
-            { userId: user._id, email: user.email },
+            { id: user._id, email: user.email }, // Changed userId to id for consistency
             JWT_SECRET,
             { expiresIn: '24h' }
         );
@@ -105,4 +115,36 @@ router.post('/login', async (req, res) => {
     }
 });
 
-module.exports = router;
+// Get current user (protected route)
+router.get('/me', async (req, res) => {
+    try {
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+
+        if (!token) {
+            return res.status(401).json({ message: 'No token provided' });
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const user = await User.findById(decoded.id).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                address: user.address,
+                joinDate: user.createdAt
+            }
+        });
+    } catch (error) {
+        console.error('Get user error:', error);
+        res.status(401).json({ message: 'Invalid token' });
+    }
+});
+
+module.exports = router;  // ✅ CORRECT: Export router, not 'auth'

@@ -43,8 +43,26 @@ const OrderHistory = () => {
     const fetchOrderHistory = async () => {
         try {
             const response = await getOrderHistory();
-            setOrders(response.data);
+            // Handle the response structure from your API
+            const ordersData = response.orders || response.data || [];
+            
+            // Transform the orders to match component expectations
+            const transformedOrders = ordersData.map(order => ({
+                ...order,
+                id: order.trackingId || order._id || order.id,
+                date: order.createdAt || order.date,
+                total: order.totalAmount || order.total,
+                items: order.items.map(item => ({
+                    id: item._id || item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity
+                }))
+            }));
+            
+            setOrders(transformedOrders);
         } catch (err) {
+            console.error('Fetch order history error:', err);
             setError('Failed to fetch order history');
         } finally {
             setLoading(false);

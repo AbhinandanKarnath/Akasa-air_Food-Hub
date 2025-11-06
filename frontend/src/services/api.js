@@ -82,21 +82,48 @@ export const checkStockAvailability = async (cartItems) => {
   return response.data;
 };
 
-// Orders API calls
-export const getOrderHistory = async () => {
-  const response = await api.get('/orders');
-  return response.data;
+// Validate stock availability - FIXED to use axios
+export const validateStock = async (cartItems) => {
+  try {
+    const response = await api.post('/orders/validate-stock', { items: cartItems });
+    return response.data;
+  } catch (error) {
+    console.error('Stock validation error:', error);
+    throw new Error(error.response?.data?.message || 'Stock validation failed');
+  }
 };
 
+// Create order - FIXED to use axios
 export const createOrder = async (orderData) => {
-  const response = await api.post('/orders', orderData);
-  return response.data;
+  try {
+    const response = await api.post('/orders/create', orderData);
+    return response.data;
+  } catch (error) {
+    console.error('Create order error:', error);
+    throw new Error(error.response?.data?.message || 'Order creation failed');
+  }
+};
+
+// Get user orders - FIXED to use axios
+export const getUserOrders = async () => {
+  try {
+    const response = await api.get('/orders/my-orders');
+    return response.data;
+  } catch (error) {
+    console.error('Get orders error:', error);
+    throw new Error(error.response?.data?.message || 'Failed to fetch orders');
+  }
+};
+
+// Get order history (alias)
+export const getOrderHistory = async () => {
+  return getUserOrders();
 };
 
 // Checkout function
 export const checkoutOrder = async (cartItems, orderData = {}) => {
   try {
-    const response = await api.post('/orders', {
+    const response = await api.post('/orders/create', {
       items: cartItems,
       ...orderData
     });

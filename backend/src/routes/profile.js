@@ -1,21 +1,21 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
-const { authenticateToken } = require('../middleware/auth');
+const auth = require('../middleware/auth');  // ✅ Changed this line
 
 const router = express.Router();
 
 // Get user profile
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', auth, async (req, res) => {  // ✅ Changed authenticateToken to auth
     try {
-        const user = await User.findById(req.user._id).select('-password');
+        const user = await User.findById(req.user._id || req.user.id).select('-password');
         
         const userProfile = {
             id: user._id,
             name: user.name,
             email: user.email,
-            phone: user.phone,
-            address: user.address,
+            phone: user.phone || '',
+            address: user.address || '',
             joinDate: user.createdAt
         };
 
@@ -33,13 +33,16 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // Update user profile
-router.put('/', authenticateToken, async (req, res) => {
+router.put('/', auth, async (req, res) => {  // ✅ Changed authenticateToken to auth
     try {
         const { name, email, phone, address } = req.body;
         
+        const userId = req.user._id || req.user.id;
+        const currentUser = await User.findById(userId);
+        
         // Check if email is being changed and if it already exists
-        if (email !== req.user.email) {
-            const existingUser = await User.findOne({ email, _id: { $ne: req.user._id } });
+        if (email !== currentUser.email) {
+            const existingUser = await User.findOne({ email, _id: { $ne: userId } });
             if (existingUser) {
                 return res.status(400).json({
                     success: false,
@@ -49,7 +52,7 @@ router.put('/', authenticateToken, async (req, res) => {
         }
 
         const updatedUser = await User.findByIdAndUpdate(
-            req.user._id,
+            userId,
             { name, email, phone, address },
             { new: true }
         ).select('-password');
@@ -76,12 +79,14 @@ router.put('/', authenticateToken, async (req, res) => {
 });
 
 // Change password
-router.put('/password', authenticateToken, async (req, res) => {
+router.put('/password', auth, async (req, res) => {  // ✅ Changed authenticateToken to auth
     try {
         const { currentPassword, newPassword } = req.body;
 
+        const userId = req.user._id || req.user.id;
+
         // Verify current password
-        const user = await User.findById(req.user._id);
+        const user = await User.findById(userId);
         const isValidPassword = await bcrypt.compare(currentPassword, user.password);
         
         if (!isValidPassword) {
@@ -96,7 +101,7 @@ router.put('/password', authenticateToken, async (req, res) => {
         const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
         // Update password
-        await User.findByIdAndUpdate(req.user._id, { password: hashedPassword });
+        await User.findByIdAndUpdate(userId, { password: hashedPassword });
 
         res.json({
             success: true,
