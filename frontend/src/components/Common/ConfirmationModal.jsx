@@ -1,111 +1,104 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React from 'react';
+import { X, AlertTriangle, Trash2, CheckCircle } from 'lucide-react';
 
-const CartContext = createContext();
+const ConfirmationModal = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  title = "Confirm Action",
+  message = "Are you sure you want to proceed?",
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  type = "warning",
+  loading = false
+}) => {
+  if (!isOpen) return null;
 
-export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState([]);
-
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      try {
-        setCartItems(JSON.parse(savedCart));
-      } catch (error) {
-        console.error('Error loading cart from localStorage:', error);
-        setCartItems([]);
-      }
-    }
-  }, []);
-
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cartItems));
-  }, [cartItems]);
-
-  const addToCart = (item, quantity = 1) => {
-    console.log('Adding to cart:', item, 'Quantity:', quantity);
-    
-    setCartItems(prevItems => {
-      const existingItem = prevItems.find(cartItem => cartItem.id === (item._id || item.id));
-      
-      if (existingItem) {
-        return prevItems.map(cartItem =>
-          cartItem.id === (item._id || item.id)
-            ? { ...cartItem, quantity: cartItem.quantity + quantity }
-            : cartItem
-        );
-      } else {
-        // Handle both MongoDB (_id) and mock data (id) formats
-        const newItem = {
-          id: item._id || item.id,
-          _id: item._id || item.id,
-          name: item.name,
-          price: item.price,
-          category: item.category,
-          stock: item.stock,
-          rating: item.rating,
-          description: item.description,
-          quantity: quantity
+  const getTypeStyles = () => {
+    switch (type) {
+      case 'danger':
+        return {
+          icon: <Trash2 className="h-6 w-6 text-red-600" />,
+          iconBg: 'bg-red-100',
+          confirmBtn: 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
         };
-        return [...prevItems, newItem];
-      }
-    });
-  };
-
-  const removeFromCart = (itemId) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== itemId && item._id !== itemId));
-  };
-
-  const updateQuantity = (itemId, newQuantity) => {
-    if (newQuantity <= 0) {
-      removeFromCart(itemId);
-      return;
+      case 'warning':
+        return {
+          icon: <AlertTriangle className="h-6 w-6 text-yellow-600" />,
+          iconBg: 'bg-yellow-100',
+          confirmBtn: 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500'
+        };
+      default:
+        return {
+          icon: <AlertTriangle className="h-6 w-6 text-blue-600" />,
+          iconBg: 'bg-blue-100',
+          confirmBtn: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+        };
     }
-
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        (item.id === itemId || item._id === itemId)
-          ? { ...item, quantity: newQuantity }
-          : item
-      )
-    );
   };
 
-  const clearCart = () => {
-    setCartItems([]);
-    localStorage.removeItem('cart');
-  };
+  const typeStyles = getTypeStyles();
 
-  const getCartItemCount = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
-  };
-
-  const getCartTotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
-
-  const value = {
-    cartItems,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    clearCart,
-    getCartItemCount,
-    getCartTotal
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
   };
 
   return (
-    <CartContext.Provider value={value}>
-      {children}
-    </CartContext.Provider>
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={handleBackdropClick}
+      style={{
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)'
+      }}
+    >
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full mx-4">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200/50">
+          <div className="flex items-center space-x-3">
+            <div className={`p-2 rounded-full ${typeStyles.iconBg}`}>
+              {typeStyles.icon}
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100/50"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          <p className="text-gray-600 leading-relaxed">{message}</p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end space-x-3 p-6 bg-gray-50/50 rounded-b-2xl">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+          >
+            {cancelText}
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className={`px-4 py-2 text-white rounded-lg font-medium min-w-[100px] flex items-center justify-center ${typeStyles.confirmBtn} transition-colors`}
+          >
+            {loading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+            ) : (
+              confirmText
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
-export const useCart = () => {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
-  return context;
-};
+export default ConfirmationModal;
