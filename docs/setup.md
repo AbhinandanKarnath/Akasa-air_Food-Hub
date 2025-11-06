@@ -2,7 +2,7 @@
 ### Instant Demo Setup
 ```bash
 # 1. Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/AbhinandanKarnath/Akasa-air_Food-Hub.git
 cd food-ordering-platform
 
 # 2. Backend Setup
