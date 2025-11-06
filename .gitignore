@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+*/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Production builds
+build/
+dist/
+*/build/
+*/dist/
+
+# Environment variables - IMPORTANT!
+# We'll include .env for demo purposes but exclude sensitive ones
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+.env.staging
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory
+coverage/
+*.lcov
+
+# Logs
+logs
+*.log
+
+# Cache directories
+.npm
+.eslintcache
+*.tgz
+*.tar.gz
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary folders
+tmp/
+temp/
