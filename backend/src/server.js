@@ -12,6 +12,20 @@ const profileRoutes = require('./routes/profile');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Debug: Log all environment variables
+console.log('🔍 Checking environment variables...');
+console.log('PORT:', process.env.PORT);
+console.log('MONGO_URI exists:', !!process.env.MONGO_URI);
+console.log('MONGO_URI length:', process.env.MONGO_URI ? process.env.MONGO_URI.length : 0);
+console.log('MONGO_URI value:', process.env.MONGO_URI ? process.env.MONGO_URI.substring(0, 30) + '...' : 'NOT SET');
+
+// Check if MONGO_URI exists and is not empty
+if (!process.env.MONGO_URI || process.env.MONGO_URI.trim() === '') {
+  console.error('❌ MONGO_URI environment variable is not set or empty!');
+  console.error('Available env vars:', Object.keys(process.env).filter(key => !key.includes('PATH')));
+  process.exit(1);
+}
+
 // Middleware
 app.use(cors({
     origin: 'http://localhost:3000',
@@ -57,4 +71,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📡 API endpoint: http://localhost:${PORT}/api`);
+//   console.log(process.env.MONGO_URI);
 });
